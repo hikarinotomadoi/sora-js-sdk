@@ -32,7 +32,7 @@ module.exports = {
         exclude: [/node_modules/],
         use: [{
           loader: 'babel-loader',
-          options: { presets: ['es2015'],  plugins: ['transform-flow-strip-types'] }
+          options: { presets: ['es2017'],  plugins: ['transform-flow-strip-types'] }
         }],
       },
     ],
