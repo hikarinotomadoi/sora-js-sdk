@@ -36,6 +36,7 @@
     "karma-webpack": "^2.0.6",
     "mocha": "^4.0.1",
     "power-assert": "^1.4.4",
+    "uglifyjs-webpack-plugin": "^1.2.5",
     "webpack": "^3.8.1"
   }
 }

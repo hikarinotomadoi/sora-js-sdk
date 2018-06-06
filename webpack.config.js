@@ -3,9 +3,9 @@
 const path = require('path');
 const webpack = require('webpack');
 const pkg = require('./package.json');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const banner = pkg.name + '\n' + pkg.description +
   '\n@version: ' + pkg.version + '\n@author: ' + pkg.author + '\n@license: ' + pkg.license;
-
 
 
 module.exports = {
@@ -23,7 +23,7 @@ module.exports = {
   },
   plugins: [
     new webpack.BannerPlugin(banner),
-    new webpack.optimize.UglifyJsPlugin({ include: /\.min\.js$/, minimize: true })
+    new UglifyJsPlugin({ include: /\.min\.js$/ })
   ],
   module: {
     rules: [
