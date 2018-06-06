@@ -25,7 +25,6 @@ export default class ConnectionPublisher extends ConnectionBase {
     else {
       this._pc.addStream(stream);
     }
-    this.stream = stream;
     await this._setRemoteDescription(message2);
     await this._createAnswer();
     await this._sendAnswer();
@@ -72,7 +71,6 @@ export default class ConnectionPublisher extends ConnectionBase {
       }
       this._callbacks.removestream(event);
     };
-    this.stream = stream;
     await this._setRemoteDescription(message2);
     await this._createAnswer();
     await this._sendAnswer();

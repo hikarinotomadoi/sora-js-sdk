@@ -12,25 +12,26 @@ export default class ConnectionSubscriber extends ConnectionBase {
     }
   }
   async _singleStream() {
+    let stream = null;
     await this.disconnect();
     const offer = await this._createOffer();
     const message = await this._signaling(offer);
     const message2 = await this._connectPeerConnection(message);
     if (typeof this._pc.ontrack === 'undefined') {
       this._pc.onaddstream = function(event) {
-        this.stream = event.stream;
-      }.bind(this);
+        stream = event.stream;
+      };
     }
     else {
       this._pc.ontrack = function(event) {
-        this.stream = event.streams[0];
-      }.bind(this);
+        stream = event.streams[0];
+      };
     }
     await this._setRemoteDescription(message2);
     await this._createAnswer();
     await this._sendAnswer();
     await this._onIceCandidate();
-    return Promise.resolve(this.stream);
+    return Promise.resolve(stream);
   }
 
   async _multiStream() {

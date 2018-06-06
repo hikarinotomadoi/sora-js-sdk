@@ -39,7 +39,6 @@ export default class ConnectionBase {
     this.debug = debug;
     this.clientId = null;
     this.remoteClientIds = [];
-    this.stream = null;
     this.role = null;
     this._ws = null;
     this._pc = null;
@@ -64,14 +63,6 @@ export default class ConnectionBase {
     this.clientId = null;
     this.authMetadata = null;
     this.remoteClientIds = [];
-    const closeStream = new Promise((resolve, _) => {
-      if (!this.stream) return resolve();
-      this.stream.getTracks().forEach((t) => {
-        t.stop();
-      });
-      this.stream = null;
-      return resolve();
-    });
     const closeWebSocket = new Promise((resolve, reject) => {
       if (!this._ws) return resolve();
       this._ws.onclose = () => {};
@@ -125,7 +116,7 @@ export default class ConnectionBase {
       }, 1000);
       this._pc.close();
     });
-    return Promise.all([closeStream, closeWebSocket, closePeerConnection]);
+    return Promise.all([closeWebSocket, closePeerConnection]);
   }
 
   async _signaling(offer: {type: 'offer', sdp: string}) {
