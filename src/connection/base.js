@@ -14,7 +14,7 @@ const RTCPeerConnection = window.RTCPeerConnection;
 const RTCSessionDescription = window.RTCSessionDescription;
 
 
-class ConnectionBase {
+export default class ConnectionBase {
   channelId: string;
   metadata: string;
   signalingUrl: string;
@@ -60,7 +60,7 @@ class ConnectionBase {
     }
   }
 
-  disconnect() {
+  async disconnect() {
     this.clientId = null;
     this.authMetadata = null;
     this.remoteClientIds = [];
@@ -128,7 +128,7 @@ class ConnectionBase {
     return Promise.all([closeStream, closeWebSocket, closePeerConnection]);
   }
 
-  _signaling(offer: {type: 'offer', sdp: string}) {
+  async _signaling(offer: {type: 'offer', sdp: string}) {
     this._trace('CREATE OFFER SDP', offer);
     return new Promise((resolve, reject) => {
       if (this._ws === null) {
@@ -174,29 +174,26 @@ class ConnectionBase {
     });
   }
 
-  _createOffer() {
+  async _createOffer() {
     let config = { iceServers: [] };
     if (isUnifiedChrome()) {
       config = Object.assign({}, config, { sdpSemantics: 'unified-plan' });
     }
     const pc = new RTCPeerConnection(config);
+    let offer;
     if (isSafari()) {
       pc.addTransceiver('video').setDirection('recvonly');
       pc.addTransceiver('audio').setDirection('recvonly');
-      return pc.createOffer()
-        .then(offer => {
-          pc.close();
-          return Promise.resolve(offer);
-        });
+      offer = await pc.createOffer();
     }
-    return pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true })
-      .then(offer => {
-        pc.close();
-        return Promise.resolve(offer);
-      });
+    else {
+      offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
+    }
+    pc.close();
+    return Promise.resolve(offer);
   }
 
-  _connectPeerConnection(message: Object) {
+  async _connectPeerConnection(message: Object) {
     if (!message.config) {
       message.config = {};
     }
@@ -209,49 +206,44 @@ class ConnectionBase {
       this._pc.oniceconnectionstatechange = (_) => {
         this._trace('ONICECONNECTIONSTATECHANGE ICECONNECTIONSTATE',this._pc.iceConnectionState);
       };
-      return Promise.resolve(message);
     }
     else {
-      return RTCPeerConnection.generateCertificate({ name: 'ECDSA', namedCurve: 'P-256' })
-        .then(certificate => {
-          message.config.certificates = [certificate];
-          if (isUnifiedChrome()) {
-            message.config = Object.assign(message.config, { sdpSemantics: 'unified-plan' });
-          }
-          this._trace('PEER CONNECTION CONFIG', message.config);
-          this._pc = new RTCPeerConnection(message.config, this.constraints);
-          this._pc.oniceconnectionstatechange = (_) => {
-            this._trace('ONICECONNECTIONSTATECHANGE ICECONNECTIONSTATE', this._pc.iceConnectionState);
-          };
-          return message;
-        });
+      const certificate = await RTCPeerConnection.generateCertificate({ name: 'ECDSA', namedCurve: 'P-256' });
+      message.config.certificates = [certificate];
+      if (isUnifiedChrome()) {
+        message.config = Object.assign(message.config, { sdpSemantics: 'unified-plan' });
+      }
+      this._trace('PEER CONNECTION CONFIG', message.config);
+      this._pc = new RTCPeerConnection(message.config, this.constraints);
+      this._pc.oniceconnectionstatechange = (_) => {
+        this._trace('ONICECONNECTIONSTATECHANGE ICECONNECTIONSTATE', this._pc.iceConnectionState);
+      };
     }
+    return Promise.resolve(message);
   }
 
-  _setRemoteDescription(message: Object) {
+  async _setRemoteDescription(message: Object) {
     return this._pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: message.sdp }));
   }
 
-  _createAnswer() {
-    return this._pc.createAnswer()
-      .then(sessionDescription => {
-        return this._pc.setLocalDescription(sessionDescription);
-      });
+  async _createAnswer() {
+    const sessionDescription = await this._pc.createAnswer();
+    return this._pc.setLocalDescription(sessionDescription);
   }
 
-  _sendAnswer() {
+  async _sendAnswer() {
     this._trace('ANSWER SDP', this._pc.localDescription.sdp);
     this._ws.send(JSON.stringify({ type: 'answer', sdp: this._pc.localDescription.sdp }));
-    return;
+    return Promise.resolve();
   }
 
-  _sendReAnswer() {
-    this._trace('RE-ANSWER SDP', this._pc.localDescription.sdp);
+  async _sendReAnswer() {
+    this._trace('ANSWER SDP', this._pc.localDescription.sdp);
     this._ws.send(JSON.stringify({ type: 're-answer', sdp: this._pc.localDescription.sdp }));
-    return;
+    return Promise.resolve();
   }
 
-  _onIceCandidate() {
+  async _onIceCandidate() {
     return new Promise((resolve, reject) => {
       const timerId = setInterval(() => {
         if (this._pc === null) {
@@ -281,10 +273,11 @@ class ConnectionBase {
     });
   }
 
-  _reOffer(message: Object) {
-    return this._setRemoteDescription(message)
-      .then(this._createAnswer.bind(this))
-      .then(this._sendReAnswer.bind(this));
+  async _reOffer(message: Object) {
+    await this._setRemoteDescription(message);
+    await this._createAnswer.bind(this);
+    await this._sendReAnswer.bind(this);
+    return Promise.resolve();
   }
 
   _trace(title: string, message: Object | string) {
@@ -293,5 +286,3 @@ class ConnectionBase {
     trace(this.clientId, title, message);
   }
 }
-
-module.exports = ConnectionBase;

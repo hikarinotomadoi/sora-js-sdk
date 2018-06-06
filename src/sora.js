@@ -11,13 +11,6 @@ import ConnectionPublisher from './connection/publisher';
 import ConnectionSubscriber from './connection/subscriber';
 
 
-const Sora = {
-  connection: function(signalingUrl: string, debug: boolean=false) {
-    return new SoraConnection(signalingUrl, debug);
-  }
-};
-
-
 class SoraConnection {
   signalingUrl: string;
   debug: boolean;
@@ -36,4 +29,8 @@ class SoraConnection {
   }
 }
 
-module.exports = Sora;
+const connection = function(signalingUrl: string, debug: boolean=false) {
+  return new SoraConnection(signalingUrl, debug);
+};
+
+export { connection };
