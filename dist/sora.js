@@ -82,24 +82,21 @@ return /******/ (function(modules) { // webpackBootstrap
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils__ = __webpack_require__(3);
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _utils = __webpack_require__(3);
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+const RTCPeerConnection = window.RTCPeerConnection;
+const RTCSessionDescription = window.RTCSessionDescription;
 
-var RTCPeerConnection = window.RTCPeerConnection;
-var RTCSessionDescription = window.RTCSessionDescription;
+class ConnectionBase {
 
-var ConnectionBase = function () {
-  function ConnectionBase(signalingUrl, channelId, metadata, options, debug) {
-    _classCallCheck(this, ConnectionBase);
-
+  constructor(signalingUrl, channelId, metadata, options, debug) {
     this.channelId = channelId;
     this.metadata = metadata;
     this.signalingUrl = signalingUrl;
@@ -113,32 +110,30 @@ var ConnectionBase = function () {
     this._ws = null;
     this._pc = null;
     this._callbacks = {
-      disconnect: function disconnect() {},
-      push: function push() {},
-      addstream: function addstream() {},
-      removestream: function removestream() {},
-      notify: function notify() {},
-      log: function log() {}
+      disconnect: function () {},
+      push: function () {},
+      addstream: function () {},
+      removestream: function () {},
+      notify: function () {},
+      log: function () {}
     };
     this.authMetadata = null;
   }
 
-  _createClass(ConnectionBase, [{
-    key: 'on',
-    value: function on(kind, callback) {
-      if (kind in this._callbacks) {
-        this._callbacks[kind] = callback;
-      }
+  on(kind, callback) {
+    if (kind in this._callbacks) {
+      this._callbacks[kind] = callback;
     }
-  }, {
-    key: 'disconnect',
-    value: function disconnect() {
-      var _this = this;
+  }
 
-      this.clientId = null;
-      this.authMetadata = null;
-      this.remoteClientIds = [];
-      var closeStream = new Promise(function (resolve, _) {
+  disconnect() {
+    var _this = this;
+
+    return _asyncToGenerator(function* () {
+      _this.clientId = null;
+      _this.authMetadata = null;
+      _this.remoteClientIds = [];
+      const closeStream = new Promise(function (resolve, _) {
         if (!_this.stream) return resolve();
         _this.stream.getTracks().forEach(function (t) {
           t.stop();
@@ -146,12 +141,12 @@ var ConnectionBase = function () {
         _this.stream = null;
         return resolve();
       });
-      var closeWebSocket = new Promise(function (resolve, reject) {
+      const closeWebSocket = new Promise(function (resolve, reject) {
         if (!_this._ws) return resolve();
         _this._ws.onclose = function () {};
 
-        var counter = 5;
-        var timer_id = setInterval(function () {
+        let counter = 5;
+        const timer_id = setInterval(function () {
           if (!_this._ws) {
             clearInterval(timer_id);
             return reject('WebSocket Closing Error');
@@ -169,9 +164,9 @@ var ConnectionBase = function () {
         }, 1000);
         _this._ws.close();
       });
-      var closePeerConnection = new Promise(function (resolve, reject) {
+      const closePeerConnection = new Promise(function (resolve, reject) {
         // Safari は signalingState が常に stable のため個別に処理する
-        if ((0, _utils.isSafari)() && _this._pc) {
+        if (Object(__WEBPACK_IMPORTED_MODULE_0__utils__["b" /* isSafari */])() && _this._pc) {
           _this._pc.oniceconnectionstatechange = null;
           _this._pc.close();
           _this._pc = null;
@@ -179,8 +174,8 @@ var ConnectionBase = function () {
         }
         if (!_this._pc || _this._pc.signalingState === 'closed') return resolve();
 
-        var counter = 5;
-        var timer_id = setInterval(function () {
+        let counter = 5;
+        const timer_id = setInterval(function () {
           if (!_this._pc) {
             clearInterval(timer_id);
             return reject('PeerConnection Closing Error');
@@ -200,13 +195,14 @@ var ConnectionBase = function () {
         _this._pc.close();
       });
       return Promise.all([closeStream, closeWebSocket, closePeerConnection]);
-    }
-  }, {
-    key: '_signaling',
-    value: function _signaling(offer) {
-      var _this2 = this;
+    })();
+  }
 
-      this._trace('CREATE OFFER SDP', offer);
+  _signaling(offer) {
+    var _this2 = this;
+
+    return _asyncToGenerator(function* () {
+      _this2._trace('CREATE OFFER SDP', offer);
       return new Promise(function (resolve, reject) {
         if (_this2._ws === null) {
           _this2._ws = new WebSocket(_this2.signalingUrl);
@@ -215,12 +211,12 @@ var ConnectionBase = function () {
           reject(e);
         };
         _this2._ws.onopen = function () {
-          var signalingMessage = (0, _utils.createSignalingMessage)(offer.sdp, _this2.role, _this2.channelId, _this2.metadata, _this2.options);
+          const signalingMessage = Object(__WEBPACK_IMPORTED_MODULE_0__utils__["a" /* createSignalingMessage */])(offer.sdp, _this2.role, _this2.channelId, _this2.metadata, _this2.options);
           _this2._trace('SIGNALING CONNECT MESSAGE', signalingMessage);
           _this2._ws.send(JSON.stringify(signalingMessage));
         };
         _this2._ws.onmessage = function (event) {
-          var data = JSON.parse(event.data);
+          const data = JSON.parse(event.data);
           if (data.type == 'offer') {
             _this2.clientId = data.client_id;
             _this2._ws.onclose = function (e) {
@@ -235,9 +231,9 @@ var ConnectionBase = function () {
             _this2._trace('SIGNALING OFFER MESSAGE', data);
             _this2._trace('OFFER SDP', data.sdp);
             resolve(data);
-          } else if (data.type == 'update') {
-            _this2._trace('UPDATE SDP', data.sdp);
-            _this2._update(data);
+          } else if (data.type == 're-offer') {
+            _this2._trace('RE-OFFER SDP', data.sdp);
+            _this2._reOffer(data);
           } else if (data.type == 'ping') {
             _this2._ws.send(JSON.stringify({ type: 'pong' }));
           } else if (data.type == 'push') {
@@ -247,329 +243,297 @@ var ConnectionBase = function () {
           }
         };
       });
-    }
-  }, {
-    key: '_createOffer',
-    value: function _createOffer() {
-      var config = { iceServers: [] };
-      if ((0, _utils.isUnifiedChrome)()) {
+    })();
+  }
+
+  _createOffer() {
+    return _asyncToGenerator(function* () {
+      let config = { iceServers: [] };
+      if (Object(__WEBPACK_IMPORTED_MODULE_0__utils__["c" /* isUnifiedChrome */])()) {
         config = Object.assign({}, config, { sdpSemantics: 'unified-plan' });
       }
-      var pc = new RTCPeerConnection(config);
-      if ((0, _utils.isSafari)()) {
+      const pc = new RTCPeerConnection(config);
+      let offer;
+      if (Object(__WEBPACK_IMPORTED_MODULE_0__utils__["b" /* isSafari */])()) {
         pc.addTransceiver('video').setDirection('recvonly');
         pc.addTransceiver('audio').setDirection('recvonly');
-        return pc.createOffer().then(function (offer) {
-          pc.close();
-          return Promise.resolve(offer);
-        });
+        offer = yield pc.createOffer();
+      } else {
+        offer = yield pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
       }
-      return pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true }).then(function (offer) {
-        pc.close();
-        return Promise.resolve(offer);
-      });
-    }
-  }, {
-    key: '_connectPeerConnection',
-    value: function _connectPeerConnection(message) {
-      var _this3 = this;
+      pc.close();
+      return Promise.resolve(offer);
+    })();
+  }
 
+  _connectPeerConnection(message) {
+    var _this3 = this;
+
+    return _asyncToGenerator(function* () {
       if (!message.config) {
         message.config = {};
       }
       if (RTCPeerConnection.generateCertificate === undefined) {
-        if ((0, _utils.isUnifiedChrome)()) {
+        if (Object(__WEBPACK_IMPORTED_MODULE_0__utils__["c" /* isUnifiedChrome */])()) {
           message.config = Object.assign(message.config, { sdpSemantics: 'unified-plan' });
         }
-        this._trace('PEER CONNECTION CONFIG', message.config);
-        this._pc = new RTCPeerConnection(message.config, this.constraints);
-        this._pc.oniceconnectionstatechange = function (_) {
+        _this3._trace('PEER CONNECTION CONFIG', message.config);
+        _this3._pc = new RTCPeerConnection(message.config, _this3.constraints);
+        _this3._pc.oniceconnectionstatechange = function (_) {
           _this3._trace('ONICECONNECTIONSTATECHANGE ICECONNECTIONSTATE', _this3._pc.iceConnectionState);
         };
-        return Promise.resolve(message);
       } else {
-        return RTCPeerConnection.generateCertificate({ name: 'ECDSA', namedCurve: 'P-256' }).then(function (certificate) {
-          message.config.certificates = [certificate];
-          if ((0, _utils.isUnifiedChrome)()) {
-            message.config = Object.assign(message.config, { sdpSemantics: 'unified-plan' });
-          }
-          _this3._trace('PEER CONNECTION CONFIG', message.config);
-          _this3._pc = new RTCPeerConnection(message.config, _this3.constraints);
-          _this3._pc.oniceconnectionstatechange = function (_) {
-            _this3._trace('ONICECONNECTIONSTATECHANGE ICECONNECTIONSTATE', _this3._pc.iceConnectionState);
-          };
-          return message;
-        });
+        const certificate = yield RTCPeerConnection.generateCertificate({ name: 'ECDSA', namedCurve: 'P-256' });
+        message.config.certificates = [certificate];
+        if (Object(__WEBPACK_IMPORTED_MODULE_0__utils__["c" /* isUnifiedChrome */])()) {
+          message.config = Object.assign(message.config, { sdpSemantics: 'unified-plan' });
+        }
+        _this3._trace('PEER CONNECTION CONFIG', message.config);
+        _this3._pc = new RTCPeerConnection(message.config, _this3.constraints);
+        _this3._pc.oniceconnectionstatechange = function (_) {
+          _this3._trace('ONICECONNECTIONSTATECHANGE ICECONNECTIONSTATE', _this3._pc.iceConnectionState);
+        };
       }
-    }
-  }, {
-    key: '_setRemoteDescription',
-    value: function _setRemoteDescription(message) {
-      return this._pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: message.sdp }));
-    }
-  }, {
-    key: '_createAnswer',
-    value: function _createAnswer() {
-      var _this4 = this;
+      return Promise.resolve(message);
+    })();
+  }
 
-      return this._pc.createAnswer().then(function (sessionDescription) {
-        return _this4._pc.setLocalDescription(sessionDescription);
-      });
-    }
-  }, {
-    key: '_sendAnswer',
-    value: function _sendAnswer() {
-      this._trace('ANSWER SDP', this._pc.localDescription.sdp);
-      this._ws.send(JSON.stringify({ type: 'answer', sdp: this._pc.localDescription.sdp }));
-      return;
-    }
-  }, {
-    key: '_sendUpdateAnswer',
-    value: function _sendUpdateAnswer() {
-      this._trace('ANSWER SDP', this._pc.localDescription.sdp);
-      this._ws.send(JSON.stringify({ type: 'update', sdp: this._pc.localDescription.sdp }));
-      return;
-    }
-  }, {
-    key: '_onIceCandidate',
-    value: function _onIceCandidate() {
-      var _this5 = this;
+  _setRemoteDescription(message) {
+    var _this4 = this;
 
+    return _asyncToGenerator(function* () {
+      return _this4._pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: message.sdp }));
+    })();
+  }
+
+  _createAnswer() {
+    var _this5 = this;
+
+    return _asyncToGenerator(function* () {
+      const sessionDescription = yield _this5._pc.createAnswer();
+      return _this5._pc.setLocalDescription(sessionDescription);
+    })();
+  }
+
+  _sendAnswer() {
+    var _this6 = this;
+
+    return _asyncToGenerator(function* () {
+      _this6._trace('ANSWER SDP', _this6._pc.localDescription.sdp);
+      _this6._ws.send(JSON.stringify({ type: 'answer', sdp: _this6._pc.localDescription.sdp }));
+      return Promise.resolve();
+    })();
+  }
+
+  _sendReAnswer() {
+    var _this7 = this;
+
+    return _asyncToGenerator(function* () {
+      _this7._trace('ANSWER SDP', _this7._pc.localDescription.sdp);
+      _this7._ws.send(JSON.stringify({ type: 're-answer', sdp: _this7._pc.localDescription.sdp }));
+      return Promise.resolve();
+    })();
+  }
+
+  _onIceCandidate() {
+    var _this8 = this;
+
+    return _asyncToGenerator(function* () {
       return new Promise(function (resolve, reject) {
-        var timerId = setInterval(function () {
-          if (_this5._pc === null) {
+        const timerId = setInterval(function () {
+          if (_this8._pc === null) {
             clearInterval(timerId);
-            var error = new Error();
+            const error = new Error();
             error.message = 'ICECANDIDATE TIMEOUT';
             reject(error);
-          } else if (_this5._pc && _this5._pc.iceConnectionState === 'connected') {
+          } else if (_this8._pc && _this8._pc.iceConnectionState === 'connected') {
             clearInterval(timerId);
             resolve();
           }
         }, 100);
-        _this5._pc.onicecandidate = function (event) {
-          _this5._trace('ONICECANDIDATE ICEGATHERINGSTATE', _this5._pc.iceGatheringState);
+        _this8._pc.onicecandidate = function (event) {
+          _this8._trace('ONICECANDIDATE ICEGATHERINGSTATE', _this8._pc.iceGatheringState);
           if (event.candidate === null) {
             clearInterval(timerId);
             resolve();
           } else {
-            var message = event.candidate.toJSON();
+            const message = event.candidate.toJSON();
             message.type = 'candidate';
-            _this5._trace('ONICECANDIDATE CANDIDATE MESSAGE', message);
-            _this5._ws.send(JSON.stringify(message));
+            _this8._trace('ONICECANDIDATE CANDIDATE MESSAGE', message);
+            _this8._ws.send(JSON.stringify(message));
           }
         };
       });
-    }
-  }, {
-    key: '_update',
-    value: function _update(message) {
-      return this._setRemoteDescription(message).then(this._createAnswer.bind(this)).then(this._sendUpdateAnswer.bind(this));
-    }
-  }, {
-    key: '_trace',
-    value: function _trace(title, message) {
-      this._callbacks.log(title, message);
-      if (!this.debug) {
-        return;
-      }
-      (0, _utils.trace)(this.clientId, title, message);
-    }
-  }]);
+    })();
+  }
 
-  return ConnectionBase;
-}();
+  _reOffer(message) {
+    var _this9 = this;
 
-module.exports = ConnectionBase;
+    return _asyncToGenerator(function* () {
+      yield _this9._setRemoteDescription(message);
+      yield _this9._createAnswer.bind(_this9);
+      yield _this9._sendReAnswer.bind(_this9);
+      return Promise.resolve();
+    })();
+  }
+
+  _trace(title, message) {
+    this._callbacks.log(title, message);
+    if (!this.debug) {
+      return;
+    }
+    Object(__WEBPACK_IMPORTED_MODULE_0__utils__["d" /* trace */])(this.clientId, title, message);
+  }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = ConnectionBase;
+
 
 /***/ }),
 /* 1 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "connection", function() { return connection; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__connection_publisher__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__connection_subscriber__ = __webpack_require__(4);
 
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _publisher = __webpack_require__(2);
 
-var _publisher2 = _interopRequireDefault(_publisher);
 
-var _subscriber = __webpack_require__(4);
+class SoraConnection {
 
-var _subscriber2 = _interopRequireDefault(_subscriber);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Sora = {
-  connection: function connection(signalingUrl) {
-    var debug = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-    return new SoraConnection(signalingUrl, debug);
-  }
-};
-
-var SoraConnection = function () {
-  function SoraConnection(signalingUrl) {
-    var debug = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-    _classCallCheck(this, SoraConnection);
-
+  constructor(signalingUrl, debug = false) {
     this.signalingUrl = signalingUrl;
     this.debug = debug;
   }
 
-  _createClass(SoraConnection, [{
-    key: 'publisher',
-    value: function publisher(channelId, metadata) {
-      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : { audio: true, video: true };
+  publisher(channelId, metadata, options = { audio: true, video: true }) {
+    return new __WEBPACK_IMPORTED_MODULE_0__connection_publisher__["a" /* default */](this.signalingUrl, channelId, metadata, options, this.debug);
+  }
 
-      return new _publisher2.default(this.signalingUrl, channelId, metadata, options, this.debug);
-    }
-  }, {
-    key: 'subscriber',
-    value: function subscriber(channelId, metadata) {
-      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : { audio: true, video: true };
+  subscriber(channelId, metadata, options = { audio: true, video: true }) {
+    return new __WEBPACK_IMPORTED_MODULE_1__connection_subscriber__["a" /* default */](this.signalingUrl, channelId, metadata, options, this.debug);
+  }
+}
 
-      return new _subscriber2.default(this.signalingUrl, channelId, metadata, options, this.debug);
-    }
-  }]);
+const connection = function (signalingUrl, debug = false) {
+  return new SoraConnection(signalingUrl, debug);
+};
 
-  return SoraConnection;
-}();
 
-module.exports = Sora;
 
 /***/ }),
 /* 2 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__base__ = __webpack_require__(0);
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _base = __webpack_require__(0);
-
-var _base2 = _interopRequireDefault(_base);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var ConnectionPublisher = function (_ConnectionBase) {
-  _inherits(ConnectionPublisher, _ConnectionBase);
-
-  function ConnectionPublisher() {
-    _classCallCheck(this, ConnectionPublisher);
-
-    return _possibleConstructorReturn(this, (ConnectionPublisher.__proto__ || Object.getPrototypeOf(ConnectionPublisher)).apply(this, arguments));
+class ConnectionPublisher extends __WEBPACK_IMPORTED_MODULE_0__base__["a" /* default */] {
+  connect(stream) {
+    this.role = 'upstream';
+    if (this.options && this.options.multistream) {
+      return this._multiStream(stream);
+    } else {
+      return this._singleStream(stream);
+    }
   }
 
-  _createClass(ConnectionPublisher, [{
-    key: 'connect',
-    value: function connect(stream) {
-      this.role = 'upstream';
-      if (this.options && this.options.multistream) {
-        return this._multiStream(stream);
+  _singleStream(stream) {
+    var _this = this;
+
+    return _asyncToGenerator(function* () {
+      yield _this.disconnect();
+      const offer = yield _this._createOffer();
+      const message = yield _this._signaling(offer);
+      const message2 = yield _this._connectPeerConnection(message);
+      if (typeof _this._pc.addStream === 'undefined') {
+        stream.getTracks().forEach(function (track) {
+          _this._pc.addTrack(track, stream);
+        });
       } else {
-        return this._singleStream(stream);
+        _this._pc.addStream(stream);
       }
-    }
-  }, {
-    key: '_singleStream',
-    value: function _singleStream(stream) {
-      var _this2 = this;
+      _this.stream = stream;
+      yield _this._setRemoteDescription(message2);
+      yield _this._createAnswer();
+      yield _this._sendAnswer();
+      yield _this._onIceCandidate();
+      return Promise.resolve(stream);
+    })();
+  }
 
-      return this.disconnect().then(this._createOffer).then(this._signaling.bind(this)).then(this._connectPeerConnection.bind(this)).then(function (message) {
-        if (typeof _this2._pc.addStream === 'undefined') {
-          stream.getTracks().forEach(function (track) {
-            _this2._pc.addTrack(track, stream);
-          });
-        } else {
-          _this2._pc.addStream(stream);
-        }
-        _this2.stream = stream;
-        return _this2._setRemoteDescription(message);
-      }).then(this._createAnswer.bind(this)).then(this._sendAnswer.bind(this)).then(this._onIceCandidate.bind(this)).then(function () {
-        return _this2.stream;
-      });
-    }
-  }, {
-    key: '_multiStream',
-    value: function _multiStream(stream) {
-      var _this3 = this;
+  _multiStream(stream) {
+    var _this2 = this;
 
-      return this.disconnect().then(this._createOffer).then(this._signaling.bind(this)).then(this._connectPeerConnection.bind(this)).then(function (message) {
-        if (typeof _this3._pc.addStream === 'undefined') {
-          stream.getTracks().forEach(function (track) {
-            _this3._pc.addTrack(track, stream);
-          });
-        } else {
-          _this3._pc.addStream(stream);
-        }
-        if (typeof _this3._pc.ontrack === 'undefined') {
-          _this3._pc.onaddstream = function (event) {
-            if (_this3.clientId !== event.stream.id) {
-              _this3.remoteClientIds.push(stream.id);
-              _this3._callbacks.addstream(event);
-            }
-          };
-        } else {
-          _this3._pc.ontrack = function (event) {
-            var stream = event.streams[0];
-            if (!stream) return;
-            if (stream.id === 'default') return;
-            if (stream.id === _this3.clientId) return;
-            if (-1 < _this3.remoteClientIds.indexOf(stream.id)) return;
-            event.stream = stream;
-            _this3.remoteClientIds.push(stream.id);
-            _this3._callbacks.addstream(event);
-          };
-        }
-        _this3._pc.onremovestream = function (event) {
-          var index = _this3.remoteClientIds.indexOf(event.stream.id);
-          if (-1 < index) {
-            delete _this3.remoteClientIds[index];
+    return _asyncToGenerator(function* () {
+      yield _this2.disconnect();
+      const offer = yield _this2._createOffer();
+      const message = yield _this2._signaling(offer);
+      const message2 = yield _this2._connectPeerConnection(message);
+      if (typeof _this2._pc.addStream === 'undefined') {
+        stream.getTracks().forEach(function (track) {
+          _this2._pc.addTrack(track, stream);
+        });
+      } else {
+        _this2._pc.addStream(stream);
+      }
+      if (typeof _this2._pc.ontrack === 'undefined') {
+        _this2._pc.onaddstream = function (event) {
+          if (_this2.clientId !== event.stream.id) {
+            _this2.remoteClientIds.push(stream.id);
+            _this2._callbacks.addstream(event);
           }
-          _this3._callbacks.removestream(event);
         };
-        _this3.stream = stream;
-        return _this3._setRemoteDescription(message);
-      }).then(this._createAnswer.bind(this)).then(this._sendAnswer.bind(this)).then(this._onIceCandidate.bind(this)).then(function () {
-        return _this3.stream;
-      });
-    }
-  }]);
+      } else {
+        _this2._pc.ontrack = function (event) {
+          const stream = event.streams[0];
+          if (!stream) return;
+          if (stream.id === 'default') return;
+          if (stream.id === _this2.clientId) return;
+          if (-1 < _this2.remoteClientIds.indexOf(stream.id)) return;
+          event.stream = stream;
+          _this2.remoteClientIds.push(stream.id);
+          _this2._callbacks.addstream(event);
+        };
+      }
+      _this2._pc.onremovestream = function (event) {
+        const index = _this2.remoteClientIds.indexOf(event.stream.id);
+        if (-1 < index) {
+          delete _this2.remoteClientIds[index];
+        }
+        _this2._callbacks.removestream(event);
+      };
+      _this2.stream = stream;
+      yield _this2._setRemoteDescription(message2);
+      yield _this2._createAnswer();
+      yield _this2._sendAnswer();
+      yield _this2._onIceCandidate();
+      return Promise.resolve(stream);
+    })();
+  }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = ConnectionPublisher;
 
-  return ConnectionPublisher;
-}(_base2.default);
-
-module.exports = ConnectionPublisher;
 
 /***/ }),
 /* 3 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.trace = trace;
-exports.isUnifiedChrome = isUnifiedChrome;
-exports.isEdge = isEdge;
-exports.isSafari = isSafari;
-exports.createSignalingMessage = createSignalingMessage;
+/* harmony export (immutable) */ __webpack_exports__["d"] = trace;
+/* harmony export (immutable) */ __webpack_exports__["c"] = isUnifiedChrome;
+/* unused harmony export isEdge */
+/* harmony export (immutable) */ __webpack_exports__["b"] = isSafari;
+/* harmony export (immutable) */ __webpack_exports__["a"] = createSignalingMessage;
 function trace(clientId, title, value) {
-  var prefix = '';
+  let prefix = '';
   if (window.performance) {
     prefix = '[' + (window.performance.now() / 1000).toFixed(3) + ']';
   }
@@ -585,7 +549,7 @@ function trace(clientId, title, value) {
 }
 
 function browser() {
-  var ua = window.navigator.userAgent.toLocaleLowerCase();
+  const ua = window.navigator.userAgent.toLocaleLowerCase();
   if (ua.indexOf('chrome') !== -1) {
     return 'chrome';
   } else if (ua.indexOf('edge') !== -1) {
@@ -606,12 +570,12 @@ function isUnifiedChrome() {
   if (browser() !== 'chrome') {
     return false;
   }
-  var ua = window.navigator.userAgent.toLocaleLowerCase();
-  var splitedUserAgent = /chrome\/([\d.]+)/.exec(ua);
+  const ua = window.navigator.userAgent.toLocaleLowerCase();
+  const splitedUserAgent = /chrome\/([\d.]+)/.exec(ua);
   if (!splitedUserAgent || splitedUserAgent.length < 2) {
     return false;
   }
-  return 68 <= parseInt(splitedUserAgent[1]);
+  return 70 <= parseInt(splitedUserAgent[1]);
 }
 
 function isEdge() {
@@ -623,7 +587,7 @@ function isSafari() {
 }
 
 function createSignalingMessage(offerSDP, role, channelId, metadata, options) {
-  var message = {
+  const message = {
     type: 'connect',
     role: role,
     channel_id: channelId,
@@ -633,7 +597,7 @@ function createSignalingMessage(offerSDP, role, channelId, metadata, options) {
     audio: true,
     video: true
   };
-  Object.keys(message).forEach(function (key) {
+  Object.keys(message).forEach(key => {
     if (message[key] === undefined) {
       message[key] = null;
     }
@@ -650,10 +614,10 @@ function createSignalingMessage(offerSDP, role, channelId, metadata, options) {
     message.spotlight = options.spotlight;
   }
   // parse options
-  var audioPropertyKeys = ['audioCodecType', 'audioBitRate'];
-  var videoPropertyKeys = ['videoCodecType', 'videoBitRate'];
-  var copyOptions = Object.assign({}, options);
-  Object.keys(copyOptions).forEach(function (key) {
+  const audioPropertyKeys = ['audioCodecType', 'audioBitRate'];
+  const videoPropertyKeys = ['videoCodecType', 'videoBitRate'];
+  const copyOptions = Object.assign({}, options);
+  Object.keys(copyOptions).forEach(key => {
     if (key === 'audio' && typeof copyOptions[key] === 'boolean') return;
     if (key === 'video' && typeof copyOptions[key] === 'boolean') return;
     if (0 <= audioPropertyKeys.indexOf(key) && copyOptions[key] !== null) return;
@@ -664,7 +628,7 @@ function createSignalingMessage(offerSDP, role, channelId, metadata, options) {
   if ('audio' in copyOptions) {
     message.audio = copyOptions.audio;
   }
-  var hasAudioProperty = Object.keys(copyOptions).some(function (key) {
+  const hasAudioProperty = Object.keys(copyOptions).some(key => {
     return 0 <= audioPropertyKeys.indexOf(key);
   });
   if (message.audio && hasAudioProperty) {
@@ -680,7 +644,7 @@ function createSignalingMessage(offerSDP, role, channelId, metadata, options) {
   if ('video' in copyOptions) {
     message.video = copyOptions.video;
   }
-  var hasVideoProperty = Object.keys(copyOptions).some(function (key) {
+  const hasVideoProperty = Object.keys(copyOptions).some(key => {
     return 0 <= videoPropertyKeys.indexOf(key);
   });
   if (message.video && hasVideoProperty) {
@@ -698,102 +662,89 @@ function createSignalingMessage(offerSDP, role, channelId, metadata, options) {
 
 /***/ }),
 /* 4 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__base__ = __webpack_require__(0);
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _base = __webpack_require__(0);
+class ConnectionSubscriber extends __WEBPACK_IMPORTED_MODULE_0__base__["a" /* default */] {
+  connect() {
+    this.role = 'downstream';
+    if (this.options && this.options.multistream) {
+      return this._multiStream();
+    } else {
+      return this._singleStream();
+    }
+  }
+  _singleStream() {
+    var _this = this;
 
-var _base2 = _interopRequireDefault(_base);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var ConnectionSubscriber = function (_ConnectionBase) {
-  _inherits(ConnectionSubscriber, _ConnectionBase);
-
-  function ConnectionSubscriber() {
-    _classCallCheck(this, ConnectionSubscriber);
-
-    return _possibleConstructorReturn(this, (ConnectionSubscriber.__proto__ || Object.getPrototypeOf(ConnectionSubscriber)).apply(this, arguments));
+    return _asyncToGenerator(function* () {
+      yield _this.disconnect();
+      const offer = yield _this._createOffer();
+      const message = yield _this._signaling(offer);
+      const message2 = yield _this._connectPeerConnection(message);
+      if (typeof _this._pc.ontrack === 'undefined') {
+        _this._pc.onaddstream = function (event) {
+          this.stream = event.stream;
+        }.bind(_this);
+      } else {
+        _this._pc.ontrack = function (event) {
+          this.stream = event.streams[0];
+        }.bind(_this);
+      }
+      yield _this._setRemoteDescription(message2);
+      yield _this._createAnswer();
+      yield _this._sendAnswer();
+      yield _this._onIceCandidate();
+      return Promise.resolve(_this.stream);
+    })();
   }
 
-  _createClass(ConnectionSubscriber, [{
-    key: 'connect',
-    value: function connect() {
-      this.role = 'downstream';
-      if (this.options && this.options.multistream) {
-        return this._multiStream();
-      } else {
-        return this._singleStream();
-      }
-    }
-  }, {
-    key: '_singleStream',
-    value: function _singleStream() {
-      var _this2 = this;
+  _multiStream() {
+    var _this2 = this;
 
-      return this.disconnect().then(this._createOffer).then(this._signaling.bind(this)).then(this._connectPeerConnection.bind(this)).then(function (message) {
-        if (typeof _this2._pc.ontrack === 'undefined') {
-          _this2._pc.onaddstream = function (event) {
-            this.stream = event.stream;
-          }.bind(_this2);
-        } else {
-          _this2._pc.ontrack = function (event) {
-            this.stream = event.streams[0];
-          }.bind(_this2);
-        }
-        return _this2._setRemoteDescription(message);
-      }).then(this._createAnswer.bind(this)).then(this._sendAnswer.bind(this)).then(this._onIceCandidate.bind(this)).then(function () {
-        return _this2.stream;
-      });
-    }
-  }, {
-    key: '_multiStream',
-    value: function _multiStream() {
-      var _this3 = this;
-
-      return this.disconnect().then(this._createOffer).then(this._signaling.bind(this)).then(this._connectPeerConnection.bind(this)).then(function (message) {
-        if (typeof _this3._pc.ontrack === 'undefined') {
-          _this3._pc.onaddstream = function (event) {
-            _this3.remoteClientIds.push(event.id);
-            _this3._callbacks.addstream(event);
-          };
-        } else {
-          _this3._pc.ontrack = function (event) {
-            var stream = event.streams[0];
-            if (stream.id === 'default') return;
-            if (stream.id === _this3.clientId) return;
-            if (-1 < _this3.remoteClientIds.indexOf(stream.id)) return;
-            event.stream = stream;
-            _this3.remoteClientIds.push(stream.id);
-            _this3._callbacks.addstream(event);
-          };
-        }
-        _this3._pc.onremovestream = function (event) {
-          var index = _this3.remoteClientIds.indexOf(event.stream.id);
-          if (-1 < index) {
-            delete _this3.remoteClientIds[index];
-          }
-          _this3._callbacks.removestream(event);
+    return _asyncToGenerator(function* () {
+      yield _this2.disconnect();
+      const offer = yield _this2._createOffer();
+      const message = yield _this2._signaling(offer);
+      const message2 = yield _this2._connectPeerConnection(message);
+      if (typeof _this2._pc.ontrack === 'undefined') {
+        _this2._pc.onaddstream = function (event) {
+          _this2.remoteClientIds.push(event.id);
+          _this2._callbacks.addstream(event);
         };
-        return _this3._setRemoteDescription(message);
-      }).then(this._createAnswer.bind(this)).then(this._sendAnswer.bind(this)).then(this._onIceCandidate.bind(this));
-    }
-  }]);
+      } else {
+        _this2._pc.ontrack = function (event) {
+          const stream = event.streams[0];
+          if (stream.id === 'default') return;
+          if (stream.id === _this2.clientId) return;
+          if (-1 < _this2.remoteClientIds.indexOf(stream.id)) return;
+          event.stream = stream;
+          _this2.remoteClientIds.push(stream.id);
+          _this2._callbacks.addstream(event);
+        };
+      }
+      _this2._pc.onremovestream = function (event) {
+        const index = _this2.remoteClientIds.indexOf(event.stream.id);
+        if (-1 < index) {
+          delete _this2.remoteClientIds[index];
+        }
+        _this2._callbacks.removestream(event);
+      };
+      yield _this2._setRemoteDescription(message2);
+      yield _this2._createAnswer();
+      yield _this2._sendAnswer();
+      yield _this2._onIceCandidate();
+      return Promise.resolve();
+    })();
+  }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = ConnectionSubscriber;
 
-  return ConnectionSubscriber;
-}(_base2.default);
-
-module.exports = ConnectionSubscriber;
 
 /***/ })
 /******/ ]);
