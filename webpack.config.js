@@ -35,6 +35,14 @@ module.exports = {
           options: { presets: ['es2015'],  plugins: ['transform-flow-strip-types'] }
         }],
       },
+      {
+        test: /\.ts$/,
+        exclude: [/node_modules/],
+        use: [{
+          loader: 'babel-loader',
+          options: { presets: ['es2015'],  plugins: ['transform-flow-strip-types'] }
+        }],
+      }
     ],
   },
 };
