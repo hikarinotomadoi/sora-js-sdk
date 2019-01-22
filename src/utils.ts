@@ -1,4 +1,8 @@
-export function trace(clientId: ?string, title: string, value: Object | string) {
+export function trace(
+  clientId: string | null,
+  title: string,
+  value: Object | string
+) {
   let prefix = '';
   if (window.performance) {
     prefix = '[' + (window.performance.now() / 1000).toFixed(3) + ']';
@@ -8,10 +12,9 @@ export function trace(clientId: ?string, title: string, value: Object | string) 
   }
 
   if (isEdge()) {
-    console.log(prefix + ' ' + title + '\n', value); // eslint-disable-line
-  }
-  else {
-    console.info(prefix + ' ' + title + '\n', value); // eslint-disable-line
+    console.log(prefix + ' ' + title + '\n', value);
+  } else {
+    console.info(prefix + ' ' + title + '\n', value);
   }
 }
 
@@ -19,20 +22,16 @@ function browser() {
   const ua = window.navigator.userAgent.toLocaleLowerCase();
   if (ua.indexOf('edge') !== -1) {
     return 'edge';
-  }
-  else if (ua.indexOf('chrome')  !== -1 && ua.indexOf('edge') === -1) {
+  } else if (ua.indexOf('chrome') !== -1 && ua.indexOf('edge') === -1) {
     return 'chrome';
-  }
-  else if (ua.indexOf('safari')  !== -1 && ua.indexOf('chrome') === -1) {
+  } else if (ua.indexOf('safari') !== -1 && ua.indexOf('chrome') === -1) {
     return 'safari';
-  }
-  else if (ua.indexOf('opera')   !== -1) {
+  } else if (ua.indexOf('opera') !== -1) {
     return 'opera';
-  }
-  else if (ua.indexOf('firefox') !== -1) {
+  } else if (ua.indexOf('firefox') !== -1) {
     return 'firefox';
   }
-  return ;
+  return;
 }
 
 function isPlanB() {
@@ -52,11 +51,11 @@ export function isUnifiedChrome() {
 }
 
 export function isUnifiedSafari() {
-  if (browser() !== 'safari') {
+  if (!isSafari()) {
     return false;
   }
   const appVersion = window.navigator.appVersion.toLowerCase();
-  const version = /version\/([\d.]+)/.exec(appVersion).pop();
+  const version = /version\/([\d.]+)/.exec(appVersion)!.pop()!;
   return 12.0 < parseFloat(version);
 }
 
@@ -72,8 +71,10 @@ export function isChrome() {
   return browser() === 'chrome';
 }
 
-export function replaceAnswerSdp(sdp) {
-  let ssrcPattern = new RegExp(/m=video[\s\S]*?(a=ssrc:(\d+)\scname:.+\r\n(a=ssrc:\2\smsid:.+\r\na=ssrc:\2\smslabel:.+\r\na=ssrc:\2\slabel:.+\r\n)?)/);  // eslint-disable-line
+export function replaceAnswerSdp(sdp: string) {
+  let ssrcPattern: RegExp | string = new RegExp(
+    /m=video[\s\S]*?(a=ssrc:(\d+)\scname:.+\r\n(a=ssrc:\2\smsid:.+\r\na=ssrc:\2\smslabel:.+\r\na=ssrc:\2\slabel:.+\r\n)?)/
+  ); // eslint-disable-line
   const found = sdp.match(ssrcPattern);
   if (!found) {
     return sdp;
@@ -87,13 +88,44 @@ export function replaceAnswerSdp(sdp) {
   const ssrcAttributeList = [];
   for (let i = 0; i < 3; i += 1) {
     ssrcGroup.push((ssrcId + i).toString());
-    ssrcAttributeList.push(ssrcAttributes.replace(ssrcIdPattern, (ssrcId + i).toString()));
+    ssrcAttributeList.push(
+      ssrcAttributes.replace(ssrcIdPattern, (ssrcId + i).toString())
+    );
   }
-  return sdp.replace(ssrcPattern, [ssrcGroup.join(' '), '\r\n', ssrcAttributeList.join('')].join(''));
+  return sdp.replace(
+    ssrcPattern,
+    [ssrcGroup.join(' '), '\r\n', ssrcAttributeList.join('')].join('')
+  );
 }
 
-export function createSignalingMessage(offerSDP, role, channelId, metadata, options) {
-  const message = {
+interface AudioVisualData {
+  codec_type?: never;
+  bit_rate?: never;
+}
+
+interface SignalingMessage {
+  type: 'connect';
+  role: never;
+  channel_id: never;
+  metadata: never;
+  sdp: string;
+  userAgent: string;
+  audio: boolean | AudioVisualData;
+  video: boolean | AudioVisualData;
+  multistream?: boolean;
+  plan_b?: boolean;
+  spotlight?: never;
+  simulcast?: boolean | { quality: never };
+}
+
+export function createSignalingMessage(
+  offerSDP: string,
+  role,
+  channelId,
+  metadata,
+  options
+) {
+  const message: SignalingMessage = {
     type: 'connect',
     role: role,
     channel_id: channelId,
@@ -120,14 +152,19 @@ export function createSignalingMessage(offerSDP, role, channelId, metadata, opti
     }
   } else if ('simulcast' in options || 'simulcastQuality' in options) {
     if (!(isUnifiedSafari() || isChrome())) {
-      throw new Error('Simulcast can not be used with this browse be used with this browserr');
+      throw new Error(
+        'Simulcast can not be used with this browse be used with this browserr'
+      );
     }
     // simulcast
     if ('simulcast' in options && options.simulcast === true) {
       message.simulcast = true;
     }
     const simalcastQualities = ['low', 'middle', 'high'];
-    if ('simulcastQuality' in options && 0 <= simalcastQualities.indexOf(options.simulcastQuality)) {
+    if (
+      'simulcastQuality' in options &&
+      0 <= simalcastQualities.indexOf(options.simulcastQuality)
+    ) {
       message.simulcast = {
         quality: options.simulcastQuality
       };
@@ -140,8 +177,10 @@ export function createSignalingMessage(offerSDP, role, channelId, metadata, opti
   Object.keys(copyOptions).forEach(key => {
     if (key === 'audio' && typeof copyOptions[key] === 'boolean') return;
     if (key === 'video' && typeof copyOptions[key] === 'boolean') return;
-    if (0 <= audioPropertyKeys.indexOf(key) && copyOptions[key] !== null) return;
-    if (0 <= videoPropertyKeys.indexOf(key) && copyOptions[key] !== null) return;
+    if (0 <= audioPropertyKeys.indexOf(key) && copyOptions[key] !== null)
+      return;
+    if (0 <= videoPropertyKeys.indexOf(key) && copyOptions[key] !== null)
+      return;
     delete copyOptions[key];
   });
 

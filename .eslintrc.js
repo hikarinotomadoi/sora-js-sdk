@@ -4,8 +4,8 @@ module.exports = {
     "commonjs": true,
     "es6": true
   },
-  "extends": ["eslint:recommended"],
-  "parser": "babel-eslint",
+  "extends": ["eslint:recommended", "plugin:prettier/recommended"],
+  "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaFeatures": {
       "experimentalObjectRestSpread": true,
@@ -14,7 +14,7 @@ module.exports = {
     "sourceType": "module"
   },
   "plugins": [
-    "flowtype"
+    "@typescript-eslint"
   ],
   "globals": {
     "process": true
@@ -33,20 +33,14 @@ module.exports = {
       "error",
       "unix"
     ],
-    "no-unused-vars": [
-      "error",
-      { "args": "all", "argsIgnorePattern": "^_" }
-    ],
+    "no-console": "off",
+    "no-unused-vars": "off",
     "no-var": "error",
     "quotes": [
       "error",
       "single"
     ],
-    "max-len": [
-      "error",
-      120,
-      2
-    ],
+    "max-len": "off",
     "object-curly-spacing": [
       "error",
       "always"
